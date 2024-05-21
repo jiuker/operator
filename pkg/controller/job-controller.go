@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	batchv1 "k8s.io/client-go/informers/batch/v1"
 	"k8s.io/client-go/kubernetes"
@@ -137,12 +138,32 @@ func NewJobController(
 			if ok {
 				intervalJob := val.(*miniojob.MinIOIntervalJob)
 				command, ok := intervalJob.CommandMap[jobName]
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
 				if ok {
+					pods, _ := kubeClientSet.CoreV1().Pods(newJob.Namespace).List(ctx, metav1.ListOptions{
+						LabelSelector: labels.Set(newJob.Spec.Selector.MatchLabels).String(),
+					})
+					for _, pod := range pods.Items {
+						logOptions := &corev1.PodLogOptions{
+							Container: pod.Spec.Containers[0].Name,
+							Follow:    false,
+							TailLines: &[]int64{50}[0],
+						}
+						podLogs, err := kubeClientSet.CoreV1().Pods(newJob.Namespace).GetLogs(pod.Name, logOptions).Do(ctx).Raw()
+						if err != nil {
+							fmt.Printf("Failed to get logs for pod %s: %v\n", pod.Name, err)
+							continue
+						}
+						// if podLogs is not empty, set status to false
+						command.SetStatus(false, string(podLogs))
+					}
 					if newJob.Status.Succeeded > 0 {
 						command.SetStatus(true, "")
 					} else {
 						for _, condition := range newJob.Status.Conditions {
 							if condition.Type == batchjobv1.JobFailed {
+								// set first
 								command.SetStatus(false, condition.Message)
 								break
 							}

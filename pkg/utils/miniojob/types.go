@@ -113,6 +113,9 @@ func (jobCommand *MinIOIntervalJobCommand) SetStatus(success bool, message strin
 	jobCommand.mutex.Lock()
 	jobCommand.Succeeded = success
 	jobCommand.Message = message
+	if jobCommand.Message == "" {
+		jobCommand.Message = message
+	}
 	jobCommand.mutex.Unlock()
 }
 
