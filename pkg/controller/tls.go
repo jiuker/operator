@@ -37,7 +37,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 )
 
@@ -115,7 +114,7 @@ func (c *Controller) generateTLSCertificateForService(serviceName, secretName, d
 	// operator deployment for owner reference
 	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
 	if err != nil {
-		panic(err)
+		//panic(err)
 	}
 
 	for {
@@ -192,13 +191,13 @@ func (c *Controller) createCertificateSecret(ctx context.Context, deployment met
 			Name:      secretName,
 			Namespace: miniov2.GetNSFromFile(),
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(deployment, schema.GroupVersionKind{
-					Group:   "apps",
-					Version: "v1",
-					Kind:    "Deployment",
-				}),
-			},
+			//OwnerReferences: []metav1.OwnerReference{
+			//	*metav1.NewControllerRef(deployment, schema.GroupVersionKind{
+			//		Group:   "apps",
+			//		Version: "v1",
+			//		Kind:    "Deployment",
+			//	}),
+			//},
 		},
 		Data: map[string][]byte{
 			certs.PrivateKeyFile: pkBytes,

@@ -141,8 +141,9 @@ func (c *Controller) createTransport() *http.Transport {
 			// Can't use SSLv3 because of POODLE and BEAST
 			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
 			// Can't use TLSv1.1 because of RC4 cipher usage
-			MinVersion: tls.VersionTLS12,
-			RootCAs:    rootCAs,
+			MinVersion:         tls.VersionTLS12,
+			RootCAs:            rootCAs,
+			InsecureSkipVerify: true,
 		},
 	}
 
